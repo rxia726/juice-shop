@@ -34,7 +34,7 @@ semgrep scan --config auto
 
 ### Scan results
 - Before fixes: **41 findings**
-- After fixes: **40 findings**
+- After fixes: **38 findings**
 
 ---
 
