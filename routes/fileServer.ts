@@ -11,11 +11,11 @@ import * as security from '../lib/insecurity'
 import { challenges } from '../data/datacache'
 import * as challengeUtils from '../lib/challengeUtils'
 
-export function servePublicFiles () {
+export function servePublicFiles() {
   return ({ params, query }: Request, res: Response, next: NextFunction) => {
     const file = params.file
 
-    if (!file.includes('/')) {
+    if (!file.includes('/') && !file.includes('\\')) {
       verify(file, res, next)
     } else {
       res.status(403)
@@ -23,21 +23,22 @@ export function servePublicFiles () {
     }
   }
 
-  function verify (file: string, res: Response, next: NextFunction) {
+  function verify(file: string, res: Response, next: NextFunction) {
     if (file && (endsWithAllowlistedFileType(file) || (file === 'incident-support.kdbx'))) {
       file = security.cutOffPoisonNullByte(file)
 
       challengeUtils.solveIf(challenges.directoryListingChallenge, () => { return file.toLowerCase() === 'acquisitions.md' })
       verifySuccessfulPoisonNullByteExploit(file)
 
-      res.sendFile(path.resolve('ftp/', file))
+      const rootDir = path.resolve('ftp')
+      res.sendFile(file, { root: rootDir })
     } else {
       res.status(403)
       next(new Error('Only .md and .pdf files are allowed!'))
     }
   }
 
-  function verifySuccessfulPoisonNullByteExploit (file: string) {
+  function verifySuccessfulPoisonNullByteExploit(file: string) {
     challengeUtils.solveIf(challenges.easterEggLevelOneChallenge, () => { return file.toLowerCase() === 'eastere.gg' })
     challengeUtils.solveIf(challenges.forgottenDevBackupChallenge, () => { return file.toLowerCase() === 'package.json.bak' })
     challengeUtils.solveIf(challenges.forgottenBackupChallenge, () => { return file.toLowerCase() === 'coupons_2013.md.bak' })
@@ -49,7 +50,7 @@ export function servePublicFiles () {
     })
   }
 
-  function endsWithAllowlistedFileType (param: string) {
+  function endsWithAllowlistedFileType(param: string) {
     return utils.endsWith(param, '.md') || utils.endsWith(param, '.pdf')
   }
 }
